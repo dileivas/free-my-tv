@@ -2385,7 +2385,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         metricBar(c, x, right, r.top + 108 * k, Ui.tr("RAM"), Homelab.memPct, mbText(Homelab.memUsedMb, Homelab.memTotalMb));
         metricBar(c, x, right, r.top + 176 * k, Ui.tr("Disk"), Homelab.diskPct, gbText(Homelab.diskUsedGb, Homelab.diskTotalGb));
         String line = serverFooter();
-        if (!line.isEmpty()) c.drawText(line, x, r.top + 262 * k, cardText);
+        if (!line.isEmpty()) {
+            float avail = r.right - 34 * k - x;
+            CharSequence fit = TextUtils.ellipsize(line, new TextPaint(cardText), avail, TextUtils.TruncateAt.END);
+            c.drawText(fit.toString(), x, r.top + 262 * k, cardText);
+        }
     }
 
     /** A label and its value, then a rounded track filled to `pct`. */
@@ -2424,15 +2428,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         return b.toString();
     }
 
-    /** Escala automática: kB/s, MB/s ou GB/s — nunca um número enorme na tela. */
+    /** Compacto para caber no card: 21.4M/s, 169k/s, 1.2G/s. */
     private static String ioRate(double kbs) {
         if (Double.isNaN(kbs)) return "—";
-        if (kbs >= 1024 * 1024) return String.format(java.util.Locale.US, "%.1f GB/s", kbs / 1048576.0);
+        if (kbs >= 1048576) return String.format(java.util.Locale.US, "%.1fG/s", kbs / 1048576.0);
         if (kbs >= 1024) {
             double mb = kbs / 1024.0;
-            return String.format(java.util.Locale.US, mb < 10 ? "%.2f MB/s" : "%.1f MB/s", mb);
+            return String.format(java.util.Locale.US, mb < 10 ? "%.1fM/s" : "%.0fM/s", mb);
         }
-        return Math.round(kbs) + " kB/s";
+        return Math.round(kbs) + "k/s";
     }
 
     private static String uptimeText(long s) {
