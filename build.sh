@@ -58,6 +58,7 @@ else
 fi
 ASSIST=false; [ "$(prop disable_assistant false)" = "true" ] && ASSIST=true
 CRYPTO=false; [ "$(prop show_crypto true)" = "true" ] && CRYPTO=true
+MEMORY=false; [ "$(prop show_memory false)" = "true" ] && MEMORY=true
 ANIMATION=false; [ "$(prop hide_animation false)" = "true" ] && ANIMATION=true
 SAVER=true; [ "$(prop screensaver true)" = "false" ] && SAVER=false
 STREMIO=false; [ "$(prop open_in_stremio false)" = "true" ] && STREMIO=true
@@ -136,6 +137,7 @@ final class Config {
     static final boolean HOME_ASSISTANT = $HA;   // home_assistant_url and _entities set: Home Settings shows its row
     static final boolean DISABLE_ASSISTANT = $ASSIST;
     static final boolean SHOW_CRYPTO = $CRYPTO;
+    static final boolean SHOW_MEMORY = $MEMORY;   // free RAM under the clock
     static final boolean HIDE_ANIMATION = $ANIMATION;
     static final boolean SCREENSAVER = $SAVER;   // false: the TV keeps its own
     static final boolean GENERIC = $GENERIC;   // built with --generic, as the APK on GitHub's releases (Updates)

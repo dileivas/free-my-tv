@@ -4719,10 +4719,33 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         return Recs.hasKey(getContext());
     }
 
+    /** Free RAM, cached for a few seconds: /proc/meminfo is cheap but this is drawn on every frame. */
+    private String memoryLine = "";
+    private long memoryAt;
+
+    private String memoryLine() {
+        long now = SystemClock.uptimeMillis();
+        if (now - memoryAt < 5000 && !memoryLine.isEmpty()) return memoryLine;
+        memoryAt = now;
+        long availKb = -1;
+        try (java.io.BufferedReader r = new java.io.BufferedReader(new java.io.FileReader("/proc/meminfo"))) {
+            for (String line; (line = r.readLine()) != null; ) {
+                if (line.startsWith("MemAvailable:")) { availKb = Long.parseLong(line.replaceAll("\\D+", "")); break; }
+            }
+        } catch (Exception ignored) {
+        }
+        memoryLine = availKb < 0 ? "" : Ui.trf("{n} MB free", "n", String.valueOf(availKb / 1024));
+        return memoryLine;
+    }
+
     private void drawClock(Canvas c) {
         float x = MARGIN * k;
         c.drawText(dateText, x - Ui.leftBearing(lDate, dateText), L_DATE_BASE * k, lDate);
         c.drawText(clockText, x - Ui.leftBearing(lClock, clockText), L_CLOCK_BASE * k, lClock);
+        if (Prefs.memMeter()) {
+            String mem = memoryLine();
+            if (!mem.isEmpty()) c.drawText(mem, x - Ui.leftBearing(lWeather, mem), (L_WEATHER_BASE + 44) * k, lWeather);
+        }
         HomeData.Weather wx = data.weather;
         if (!Prefs.weather() || Double.isNaN(wx.temp)) return;
         if (data.weatherAt != weatherLineAt || Prefs.version != weatherLinePrefs || !Ui.language.equals(weatherLineLanguage)) {

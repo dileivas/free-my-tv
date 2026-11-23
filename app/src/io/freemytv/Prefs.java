@@ -290,6 +290,9 @@ final class Prefs {
 
     static void setTheme(String v) { put("theme", v); }
 
+    /** Free RAM under the clock (Home Settings › Memory). */
+    static boolean memMeter() { return sp().getBoolean("memory", Config.SHOW_MEMORY); }
+
     /** Fire TV: bring our home screen back when Amazon's launcher takes the Home button (FireHomeKeeper). */
     static boolean fireHome() { return sp().getBoolean("firehome", false); }
     static void setFireHome(boolean on) { put("firehome", on); }

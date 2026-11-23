@@ -49,6 +49,14 @@ again after a restart.
 - If the home screen crashes three times in five minutes, the built-in Watchdog reverts to the TV's original home
   screen and shows a notice. Reinstalling the app clears that state.
 
+## Shelf and extras in this fork
+
+`HomeApps.SHELF` also lists the apps this house uses, so they show up without picking them one by one:
+Jellyfin, Seerr, Kodi, Stremio, Downloader, Unitv and Amazon Music. The shelf shows 8 at a time; the rest are in
+*Settings › Shelf*.
+
+`show_memory=true` in `config.properties` adds the free RAM under the clock.
+
 ## Limitations
 
 - The shelf starts with the well-known apps only; add yours in *Settings › Shelf* (Jellyfin, Kodi and sideloaded apps

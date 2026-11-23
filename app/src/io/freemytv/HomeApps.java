@@ -120,6 +120,14 @@ final class HomeApps {
         {"premier", "Premier", "gpm.tnt_premier", "FF2D55", "", "1"},
         {"amediateka", "Амедиатека", "ru.amediateka", "E31E24", "", "1"},
         {"wink", "Wink", "ru.rt.video.app.tv", "FF5A1F", "", "1"},
+        // Fire TV apps this fork adds to the shelf (they are not streaming services for the picks).
+        {"jellyfin", "Jellyfin", "org.jellyfin.androidtv", "00A4DC", "", "1"},
+        {"seerr", "Seerr", "com.seerr.tv", "7B5CD6", "", "1"},
+        {"kodi", "Kodi", "org.xbmc.kodi", "17B2E7", "", "1"},
+        {"stremio", "Stremio", "com.stremio.one", "6C5CE7", "", "1"},
+        {"downloader", "Downloader", "com.esaba.downloader", "FF6B00", "", "1"},
+        {"unitv", "Unitv", "com.global.unitviptv", "2BC4E8", "", "1"},
+        {"amazonmusic", "Amazon Music", "com.amazon.bueller.music", "25D1DA", "", "1"},
         {"spotify", "Spotify", "com.spotify.tv.android", "1DB954", "", "1"},
     };
     /**
