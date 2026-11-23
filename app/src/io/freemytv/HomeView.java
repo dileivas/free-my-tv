@@ -3395,6 +3395,20 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     /** Recent Apps over a blurred copy of the screen (without the copy, over a dark veil). */
+    /** Abre o app Seerr no título do destaque (mesmo catálogo TMDB). */
+    private boolean openInSeerr(Recs.Pick p) {
+        Intent i = activity.getPackageManager().getLaunchIntentForPackage("com.seerr.tv");
+        if (i == null) return false;
+        i.putExtra("path", "/" + ("movie".equals(p.kind) ? "movie" : "tv") + "/" + p.id);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            activity.startActivity(i);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     private void openRecents() {
         if (recents == null) {
             recents = new RecentApps(activity, new RecentApps.Host() {
@@ -3441,6 +3455,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         } else if (zone == Z_HERO) {
             Recs.Pick p = currentPick();
             if (p == null || p.pkg == null) return;
+            if (Prefs.openPicksInSeerr() && openInSeerr(p)) { click.open(); return; }
             it = HomeApps.app(p.pkg, Recs.serviceName(p), p.link);
             r = heroButton;
         } else if (zone == Z_STATUS) {
@@ -3466,6 +3481,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         } else if (zone == Z_CARDS) {
             Recs.Pick p = cardIndex < cards.size() ? cards.get(cardIndex) : null;
             if (p == null || p.pkg == null) return;
+            if (Prefs.openPicksInSeerr() && openInSeerr(p)) { click.open(); return; }
             it = HomeApps.app(p.pkg, Recs.serviceName(p), p.link);
             r = cardRects[cardIndex];
         } else {

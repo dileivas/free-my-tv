@@ -293,6 +293,9 @@ final class Prefs {
     /** Free RAM under the clock (Home Settings › Memory). */
     static boolean memMeter() { return sp().getBoolean("memory", Config.SHOW_MEMORY); }
 
+    /** Picks open the Seerr app at the title (config `open_picks_in_seerr`). */
+    static boolean openPicksInSeerr() { return sp().getBoolean("seerrpicks", Config.OPEN_PICKS_IN_SEERR); }
+
     /** Fire TV: bring our home screen back when Amazon's launcher takes the Home button (FireHomeKeeper). */
     static boolean fireHome() { return sp().getBoolean("firehome", false); }
     static void setFireHome(boolean on) { put("firehome", on); }
