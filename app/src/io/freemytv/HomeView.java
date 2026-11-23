@@ -2038,7 +2038,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         float bw = tileRects[0].width() * (1 + FOCUS_GROW), bh = tileRects[0].height() * (1 + FOCUS_GROW);
         float lw = src.getWidth(), lh = src.getHeight();
         float scale = (float) Math.sqrt(bw * bh * 0.085f / (lw * lh * Math.max(0.08f, it.logoInk))) * it.logoScale;
-        scale = Math.min(scale, Math.min(bw * 0.76f / lw, bh * 0.58f / lh));
+        // logoScale >= 5 pede arte de sangria total (tile cheio, como Prime Video/YouTube);
+        // abaixo disso o logo mantém o respiro clássico.
+        float fill = Math.min(1f, Math.max(0f, (it.logoScale - 1f) / 4f));
+        float maxW = bw * (0.76f + 0.24f * fill), maxH = bh * (0.58f + 0.42f * fill);
+        scale = Math.min(scale, Math.min(maxW / lw, maxH / lh));
         if (rest) scale /= 1 + FOCUS_GROW;
         Bitmap out = Ui.downscale(src, Math.round(lw * scale), Math.round(lh * scale));
         crispLogos.put(key, out);
