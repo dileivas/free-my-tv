@@ -147,7 +147,9 @@ final class HomeApps {
     }
 
     static int maxShelf(Context c) {
-        return lowRam(c) ? FEW_APPS : Integer.MAX_VALUE;
+        // Low-RAM TVs keep 8 apps and no scroll to save memory; SHELF_SCROLL lifts that (Fire TV Stick: 8 on screen,
+        // the rest by scrolling).
+        return lowRam(c) && !Config.SHELF_SCROLL ? FEW_APPS : Integer.MAX_VALUE;
     }
 
     /** An app All Apps leaves out (the TV's own helpers: Safety Guard, T-Solo…): Recent Apps leaves it out too. */
@@ -234,8 +236,9 @@ final class HomeApps {
         List<String> out = new ArrayList<>();
         Set<String> keys = new HashSet<>();
         PackageManager pm = c.getPackageManager();
+        int max = maxShelf(c);   // 8 on a low-RAM TV unless SHELF_SCROLL: then 8 on screen and the rest scroll
         for (String[] d : SHELF) {
-            if (out.size() < FEW_APPS && !keys.contains(d[0]) && launchIntent(pm, d[2]) != null) {
+            if (out.size() < max && !keys.contains(d[0]) && launchIntent(pm, d[2]) != null) {
                 keys.add(d[0]);
                 out.add(d[2]);
             }

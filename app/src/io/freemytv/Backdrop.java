@@ -1,6 +1,7 @@
 package io.freemytv;
 
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
@@ -236,12 +237,20 @@ final class Backdrop {
         return Bitmap.createBitmap(b, (b.getWidth() - cw) / 2, (b.getHeight() - ch) / 2, cw, ch);
     }
 
-    /** Copies it to GPU memory (cheap to draw; the process doesn't keep the pixels). */
+    /** Copies it to GPU memory (cheap to draw; the process doesn't keep the pixels). Android 7.1 has no HARDWARE bitmaps. */
     static Bitmap gpu(Bitmap b) {
-        Bitmap g = b.copy(Bitmap.Config.HARDWARE, false);
+        if (Build.VERSION.SDK_INT < 26) return b;
+        Bitmap g = Hardware.copy(b);
         if (g == null) return b;
         b.recycle();
         return g;
+    }
+
+    /** Only this class touches Bitmap.Config.HARDWARE (Android 8+), so Backdrop verifies on Fire OS 6. */
+    private static final class Hardware {
+        static Bitmap copy(Bitmap b) {
+            return b.copy(Bitmap.Config.HARDWARE, false);
+        }
     }
 
     /** Blends with a near-black (the darkest gray of Apple's dark-mode backgrounds), keeping the photo's tint. */

@@ -49,6 +49,18 @@ again after a restart.
 - If the home screen crashes three times in five minutes, the built-in Watchdog reverts to the TV's original home
   screen and shows a notice. Reinstalling the app clears that state.
 
+## API 25 fixes found while running with the picks on
+
+| Change | Why |
+|---|---|
+| `Backdrop.gpu`: `Bitmap.Config.HARDWARE` moved to a nested class, Android 8+ only | the field does not exist on API 25 (`NoSuchFieldError`) and it is reached as soon as a pick has a backdrop |
+
+## Fire OS answers UsageStats with nothing
+
+On this device `UsageStatsManager.queryEvents` returns **no events** for a sideloaded app even with
+`GET_USAGE_STATS allow`. `FireHomeKeeper` therefore falls back to `queryUsageStats(INTERVAL_DAILY, …)`
+(last used package) and then to `getRunningTasks(1)`. All three are tried in that order.
+
 ## Shelf and extras in this fork
 
 `HomeApps.SHELF` also lists the apps this house uses, so they show up without picking them one by one:

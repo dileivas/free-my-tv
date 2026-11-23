@@ -52,6 +52,8 @@ public final class FireHomeKeeper extends Service {
     private Handler worker;
     private UsageStatsManager usage;
     private long lastLaunch;
+    private long lastLog;
+    private static final int LOG_EVERY = 0;   // 1 = verbose keeper logging to logcat
     private boolean running;
     private String lastForeground = "";
 
@@ -118,6 +120,10 @@ public final class FireHomeKeeper extends Service {
             try {
                 String pkg = foregroundPackage();
                 if (AMAZON_LAUNCHER.equals(pkg)) bringBack();
+                else if (LOG_EVERY != 0 && SystemClock.uptimeMillis() - lastLog > 5000) {
+                    lastLog = SystemClock.uptimeMillis();
+                    AppLog.w("fire-keeper: foreground=" + pkg + " tasks=" + taskCount());
+                }
             } catch (Throwable t) {
                 AppLog.w("fire-home-keeper: " + t);
             }
@@ -125,26 +131,73 @@ public final class FireHomeKeeper extends Service {
         }
     };
 
-    /** The package of the last window to come to the front, or "" when UsageStats has nothing to say. */
+    /** The package of the last window to come to the front, by whichever source Fire OS answers. */
     private String foregroundPackage() {
         if (usage == null) usage = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
-        if (usage == null) return "";
         long now = System.currentTimeMillis();
-        UsageEvents events = usage.queryEvents(now - 10_000, now);
-        if (events == null) return lastForeground;
-        UsageEvents.Event event = new UsageEvents.Event();
-        String last = null;
-        while (events.hasNextEvent()) {
-            events.getNextEvent(event);
-            if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) last = event.getPackageName();
+        if (usage != null) {
+            UsageEvents events = usage.queryEvents(now - 4_000, now);
+            if (events != null) {
+                UsageEvents.Event event = new UsageEvents.Event();
+                String last = null;
+                int n = 0;
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event);
+                    n++;
+                    if (event.getEventType() == UsageEvents.Event.MOVE_TO_FOREGROUND) last = event.getPackageName();
+                }
+                if (last != null) {
+                    dbg("events=" + n + " last=" + last);
+                    lastForeground = last;
+                    return last;
+                }
+            }
+            // Fire OS 6 answers queryEvents with nothing for a sideloaded app: try the aggregated stats.
+            String byStats = byUsageStats(now);
+            if (byStats != null) {
+                dbg("stats=" + byStats);
+                lastForeground = byStats;
+                return byStats;
+            }
         }
-        if (last == null) {
-            // Nothing at all: the app-ops grant is missing. Ask for it once, then keep the previous answer.
-            if (lastForeground.isEmpty()) grantUsage();
-            return lastForeground;
+        // Last resort (deprecated, and Fire OS may refuse it): the running tasks list.
+        String byTasks = byRunningTask();
+        if (byTasks != null) {
+            dbg("runningTask=" + byTasks);
+            lastForeground = byTasks;
+            return byTasks;
         }
-        lastForeground = last;
-        return last;
+        dbg("no source answered");
+        if (lastForeground.isEmpty()) grantUsage();
+        return lastForeground;
+    }
+
+    private String byUsageStats(long now) {
+        try {
+            java.util.List<android.app.usage.UsageStats> list = usage.queryUsageStats(
+                    UsageStatsManager.INTERVAL_DAILY, now - 120_000, now);
+            if (list == null) return null;
+            android.app.usage.UsageStats best = null;
+            for (android.app.usage.UsageStats u : list) {
+                if (best == null || u.getLastTimeUsed() > best.getLastTimeUsed()) best = u;
+            }
+            return best == null ? null : best.getPackageName();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private String byRunningTask() {
+        try {
+            ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            java.util.List<ActivityManager.RunningTaskInfo> tasks = am == null ? null : am.getRunningTasks(1);
+            if (tasks == null || tasks.isEmpty()) return null;
+            ActivityManager.RunningTaskInfo info = tasks.get(0);
+            return info.topActivity == null ? null : info.topActivity.getPackageName();
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     /** Brings our home screen back to the front, at most once every {@link #DEBOUNCE_MS}. */
@@ -161,6 +214,7 @@ public final class FireHomeKeeper extends Service {
                     if (info == null || info.baseIntent == null || info.baseIntent.getComponent() == null) continue;
                     String cls = info.baseIntent.getComponent().getClassName();
                     if (cls != null && cls.endsWith("HomeActivity")) {
+                        AppLog.w("fire-keeper: moveToFront " + cls);
                         task.moveToFront();
                         return;
                     }
@@ -169,6 +223,7 @@ public final class FireHomeKeeper extends Service {
         } catch (Throwable t) {
             AppLog.w("fire-home-keeper moveToFront: " + t);
         }
+        AppLog.w("fire-keeper: no task, starting FireHomeActivity");
         // No task yet (first start after a boot): start it. FireHomeActivity has no resumeWhilePausing, which on Fire OS
         // is what keeps window focus on Amazon's paused launcher.
         try {
@@ -180,6 +235,22 @@ public final class FireHomeKeeper extends Service {
     }
 
     /** Fire OS has no screen for this permission: ADB grants it, the same way the sleep overlay gets its own. */
+    private void dbg(String m) {
+        if (LOG_EVERY != 0 && SystemClock.uptimeMillis() - lastLog > 3000) {
+            lastLog = SystemClock.uptimeMillis();
+            AppLog.w("fire-keeper: " + m);
+        }
+    }
+
+    private int taskCount() {
+        try {
+            ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            return am == null || am.getAppTasks() == null ? -1 : am.getAppTasks().size();
+        } catch (Throwable t) {
+            return -2;
+        }
+    }
+
     private void grantUsage() {
         if (!granting.compareAndSet(false, true)) return;
         new Thread(() -> {
