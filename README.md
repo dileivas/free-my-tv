@@ -1,3 +1,52 @@
+> [!IMPORTANT]
+> # This is a fork — not the upstream project
+>
+> This repository is a **fork of [Free My TV](https://github.com/simbasjungles/free-my-tv)** by
+> [@simbasjungles](https://github.com/simbasjungles) and its contributors. Everything below this notice is the
+> upstream README, with this fork's additions marked as such. All credit for the design, the drawing and the feature
+> set belongs to the upstream authors.
+>
+> **Why this fork exists:** the upstream targets Google TV / Android TV (Android 8+) and, on Fire TV, deliberately
+> stays a regular app — Amazon keeps the Home button. This fork makes it run on **Fire OS 6 (Android 7.1, API 25)**
+> and take the Home button on a Fire TV. Nothing else was redesigned.
+>
+> ## The device this code was tested on (the only one so far)
+>
+> | | |
+> |---|---|
+> | Device | Amazon **Fire TV Stick 4K, 1st gen (2018)** |
+> | Model / codename | **AFTMM** / `mantis` |
+> | OS | **Fire OS 6.7.1.1** (`NS6711/5908`) |
+> | Android | **7.1.2 — SDK 25** |
+> | RAM | 1.5 GB (reported as "2 GB class"); `ActivityManager.isLowRamDevice()` returns true |
+> | CPU / ABI | MediaTek quad-core Cortex-A53, **`armeabi-v7a` only (32-bit)** |
+> | WebView | `com.amazon.webview.chromium`, Chromium **118** |
+> | ADB | TCP `5555`, authorized from a PC on the same LAN |
+> | Built with | JDK 17, Android SDK build-tools 34.0.0, platform android-34, `minSdk 25`, `d8 --min-api 25` |
+> | Branch | `firetv-support` |
+>
+> ## What this fork changes
+>
+> - **Runs on API 25:** `minSdk 25` and `d8 --min-api 25` (without the second one d8 emits dex 038, which Android 7.1
+>   refuses to load), plus API 26 calls moved into nested classes behind `SDK_INT` checks
+>   (`Typeface.Builder`, `AdaptiveIconDrawable`, `Bitmap.Config.HARDWARE`) and guarded
+>   (`NotificationChannel`, `startForegroundService`, `TYPE_APPLICATION_OVERLAY`).
+> - **Takes over the Home button on Fire TV:** `FireHomeKeeper`, a foreground service that reads the foreground
+>   package and brings our task back. No accessibility service — Fire OS 6.7 refuses third-party ones. On this device
+>   `UsageStatsManager.queryEvents` returns nothing for a sideloaded app, so it falls back to `queryUsageStats` and
+>   then `getRunningTasks`. Off by default; see [docs/FIRETV.md](docs/FIRETV.md).
+> - **Shelf:** Fire TV apps added (Jellyfin, Seerr, Kodi, Stremio, Downloader, Unitv, Amazon Music) and
+>   `shelf_scroll=true` lifts the 8-app cap on low-RAM devices, so the row holds every app and scrolls.
+> - **`show_memory`:** optional free-RAM line under the clock.
+>
+> **Not tested:** Fire OS 7, Fire OS 8, Vega OS (Fire TV Stick 4K Select / Stick HD 2026), 1 GB sticks, other Fire TV
+> models. Expect the same API work to be needed, minus the API 25 guards.
+>
+> **License:** MIT, like the upstream. This fork is unofficial and unaffiliated with Amazon, Google or the upstream
+> author. Flashing, sideloading and package changes are your own responsibility.
+
+---
+
 <div align="center">
 
 <img src="docs/assets/icon-512.png" width="96" alt="">
