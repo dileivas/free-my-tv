@@ -465,5 +465,11 @@
  "{time} left": "faltam {time}",
  "{url}, code {code}": "{url}, código {code}",
  "{version} is out: build it again": "Saiu a {version}: compile de novo",
- "← → to move · OK to drop · Back to cancel": "← → para mover · OK para soltar · Voltar para cancelar"
+ "← → to move · OK to drop · Back to cancel": "← → para mover · OK para soltar · Voltar para cancelar",
+ "Server": "Servidor",
+ "Disk": "Disco",
+ "RAM": "RAM",
+ "CPU": "CPU",
+ "container": "contêiner",
+ "containers": "contêineres"
 }

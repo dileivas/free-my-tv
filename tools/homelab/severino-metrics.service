@@ -1,0 +1,17 @@
+[Unit]
+Description=Severino metrics (JSON for the TV)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/severino-metrics/metrics.py
+Environment=PORT=9123
+Environment=NAME=Severino
+Environment=DISK_PATH=/
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

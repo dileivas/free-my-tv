@@ -609,6 +609,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         super(a);
         activity = a;
         data = HomeData.get(a);
+        Homelab.get(a).addListener(this::onData);
         recs = Recs.get(a);
         playing = new NowPlaying.Watch(a, this::onPlaying);
         click = new Click(a);
@@ -820,6 +821,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     @Override public void onData() {
         wake();
+        if (!drawerItems.isEmpty()) layoutDrawer();   // the server card may have come or gone
         updatePalette();
         checkNight(true);
         layoutStatus();
@@ -2078,8 +2080,10 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         float cardsTop = CARDS_TOP * k, split = left + (right - left) * 0.585f;
         boolean wx = Prefs.weather(), qt = Prefs.quotes() && HomeData.active().length > 0;
+        boolean sv = !qt && Homelab.shown();   // the right-hand card is the prices, or the server
+        boolean rightCard = qt || sv;
         // A card that is off gives its room to the other one.
-        weatherCard.set(left, cardsTop, qt ? split - 16 * k : right, cardsTop + CARDS_H * k);
+        weatherCard.set(left, cardsTop, rightCard ? split - 16 * k : right, cardsTop + CARDS_H * k);
         quotesCard.set(wx ? split + 16 * k : left, cardsTop, right, cardsTop + CARDS_H * k);
         snap(weatherCard);
         snap(quotesCard);
@@ -2198,7 +2202,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < drawerItems.size(); i++) if (i != top) drawDrawerTile(c, i);
         if (top >= 0) drawDrawerTile(c, top);
         if (Prefs.weather()) drawWeatherCard(c, weatherCard);
-        if (Prefs.quotes() && HomeData.active().length > 0) drawQuotesCard(c, quotesCard);
+        if (Prefs.quotes() && HomeData.active().length > 0) {
+            drawQuotesCard(c, quotesCard);
+        } else if (Homelab.shown()) {
+            drawServerCard(c, quotesCard);
+        }
+        Homelab.get(getContext()).refresh(getContext());
     }
 
     /** Square drawer button: symbol and name; an input with no device is dimmed. Focused: white, with dark text. */
@@ -2345,6 +2354,75 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     /** Prices in the configured currency with the 24 h change (green/red, like Apple's Stocks app). */
+
+    /** The homelab card: bars for RAM and disk, then CPU, temperature, IO and containers. Hidden when the server is down. */
+    private void drawServerCard(Canvas c, RectF r) {
+        drawerCard(c, r);
+        float x = r.left + 34 * k, right = r.right - 34 * k;
+        String title = Homelab.name.isEmpty() ? Ui.tr("Server") : Homelab.name;
+        c.drawText(title, x, r.top + 54 * k, cardTitle);
+        String up = uptimeText(Homelab.uptimeS);
+        if (!up.isEmpty()) c.drawText(up, right - cardDimRight.measureText(up), r.top + 54 * k, cardDimRight);
+        metricBar(c, x, right, r.top + 108 * k, Ui.tr("RAM"), Homelab.memPct, mbText(Homelab.memUsedMb, Homelab.memTotalMb));
+        metricBar(c, x, right, r.top + 176 * k, Ui.tr("Disk"), Homelab.diskPct, gbText(Homelab.diskUsedGb, Homelab.diskTotalGb));
+        String line = serverFooter();
+        if (!line.isEmpty()) c.drawText(line, x, r.top + 262 * k, cardText);
+    }
+
+    /** A label and its value, then a rounded track filled to `pct`. */
+    private void metricBar(Canvas c, float x, float right, float top, String label, double pct, String value) {
+        c.drawText(label, x, top, cardText);
+        if (!value.isEmpty()) c.drawText(value, right - cardDim.measureText(value), top, cardDim);
+        if (Double.isNaN(pct)) return;
+        float h = 10 * k, y = top + 14 * k;
+        tmp.set(x, y, right, y + h);
+        fill.setShader(null);
+        fill.setColor(tone(L_DIM, 0x1FFFFFFF));
+        c.drawRoundRect(tmp, h / 2, h / 2, fill);
+        float width = (right - x) * (float) Math.max(0, Math.min(100, pct)) / 100f;
+        width = Math.max(h, width);   // a sliver still reads as a bar
+        tmp.set(x, y, x + width, y + h);
+        fill.setColor(pct >= 90 ? tone(0xFFD70015, DOWN_COLOR) : pct >= 75 ? tone(0xFFC76A00, UP_COLOR)
+                : tone(0xFF248A3D, 0xFF34C759));
+        c.drawRoundRect(tmp, h / 2, h / 2, fill);
+    }
+
+    private String serverFooter() {
+        StringBuilder b = new StringBuilder();
+        if (!Double.isNaN(Homelab.cpuPct)) b.append(Ui.tr("CPU")).append(' ').append(Math.round(Homelab.cpuPct)).append('%');
+        if (!Double.isNaN(Homelab.tempC)) {
+            if (b.length() > 0) b.append(" · ");
+            b.append(Math.round(Homelab.tempC)).append('°');
+        }
+        if (Homelab.containers >= 0) {
+            if (b.length() > 0) b.append(" · ");
+            b.append(Homelab.containers).append(' ').append(Ui.tr(Homelab.containers == 1 ? "container" : "containers"));
+        }
+        if (!Double.isNaN(Homelab.readKbs) || !Double.isNaN(Homelab.writeKbs)) {
+            if (b.length() > 0) b.append(" · ");
+            b.append('↓').append(Math.round(Homelab.readKbs)).append(" ↑").append(Math.round(Homelab.writeKbs))
+                    .append(" kB/s");
+        }
+        return b.toString();
+    }
+
+    private static String uptimeText(long s) {
+        if (s < 0) return "";
+        long d = s / 86_400, h = (s % 86_400) / 3_600;
+        if (d > 0) return d + "d " + h + "h";
+        return h + "h " + ((s % 3_600) / 60) + "m";
+    }
+
+    private static String mbText(long used, long total) {
+        if (used < 0 || total < 0) return "";
+        return String.format(java.util.Locale.US, "%.1f / %.0f GB", used / 1024.0, total / 1024.0);
+    }
+
+    private static String gbText(long used, long total) {
+        if (used < 0 || total < 0) return "";
+        return used + " / " + total + " GB";
+    }
+
     private void drawQuotesCard(Canvas c, RectF r) {
         drawerCard(c, r);
         if (Ui.LEGACY) quotesSnapshot.draw(c, r, drawerCardsKey(), cc -> drawPrices(cc, r));

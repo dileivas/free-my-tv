@@ -69,6 +69,13 @@ Jellyfin, Seerr, Kodi, Stremio, Downloader, Unitv and Amazon Music. The shelf sh
 
 `show_memory=true` in `config.properties` adds the free RAM under the clock.
 
+## Homelab card
+
+This fork adds an optional server-health card to the drawer, next to the weather: RAM and disk bars, CPU, temperature,
+IO and running containers, from a small JSON endpoint you host yourself (see [tools/homelab](../tools/homelab)).
+Set `homelab_url` in `config.properties`. When the server is down the card disappears and the weather card takes its
+room back — silent, no error state.
+
 ## Limitations
 
 - The shelf starts with the well-known apps only; add yours in *Settings › Shelf* (Jellyfin, Kodi and sideloaded apps
