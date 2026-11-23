@@ -29,6 +29,7 @@ import android.graphics.Shader;
 import android.hardware.usb.UsbManager;
 import android.media.tv.TvInputManager;
 import android.net.ConnectivityManager;
+import android.net.NetworkRequest;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.os.Build;
@@ -504,6 +505,14 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         });
     }
 
+    /** Only this class touches registerDefaultNetworkCallback (Android 8+), so HomeView verifies on Fire OS 6. */
+    private static final class Net {
+        static void register(android.net.ConnectivityManager c, android.net.ConnectivityManager.NetworkCallback cb,
+                             Handler h) {
+            c.registerDefaultNetworkCallback(cb, h);
+        }
+    }
+
     private void setDevices(boolean bt, boolean drive) {
         if (bt == bluetoothConnected && drive == usbConnected) return;
         bluetoothConnected = bt;
@@ -520,9 +529,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (connectivity != null && !networkRegistered) {
             try {
                 if (connectivity.getActiveNetwork() == null) setNetwork(0);
-                connectivity.registerDefaultNetworkCallback(networkCallback, handler);
+                if (Build.VERSION.SDK_INT >= 26) {
+                    Net.register(connectivity, networkCallback, handler);
+                } else {
+                    // Fire OS 6 (API 25): the default-network callback does not exist yet; watch every network.
+                    connectivity.registerNetworkCallback(new NetworkRequest.Builder().build(), networkCallback);
+                }
                 networkRegistered = true;
-            } catch (RuntimeException ignored) {
+            } catch (Throwable ignored) {
+                // A missing method must never take the home screen down (it did once: NoSuchMethodError is an Error).
             }
         }
         if (!devicesRegistered) {

@@ -54,6 +54,7 @@ again after a restart.
 | Change | Why |
 |---|---|
 | `Backdrop.gpu`: `Bitmap.Config.HARDWARE` moved to a nested class, Android 8+ only | the field does not exist on API 25 (`NoSuchFieldError`) and it is reached as soon as a pick has a backdrop |
+| `HomeView.startStatus`: `registerDefaultNetworkCallback` is Android 8+; API 25 uses `registerNetworkCallback(NetworkRequest, cb)`; the `catch` is `Throwable` | with **Status icons** on, the home screen crashed on every resume (`NoSuchMethodError` — an `Error`, so `catch (RuntimeException)` never saw it) |
 
 ## Fire OS answers UsageStats with nothing
 
