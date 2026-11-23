@@ -2419,10 +2419,20 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         }
         if (!Double.isNaN(Homelab.readKbs) || !Double.isNaN(Homelab.writeKbs)) {
             if (b.length() > 0) b.append(" · ");
-            b.append('↓').append(Math.round(Homelab.readKbs)).append(" ↑").append(Math.round(Homelab.writeKbs))
-                    .append(" kB/s");
+            b.append('↓').append(ioRate(Homelab.readKbs)).append(" ↑").append(ioRate(Homelab.writeKbs));
         }
         return b.toString();
+    }
+
+    /** Escala automática: kB/s, MB/s ou GB/s — nunca um número enorme na tela. */
+    private static String ioRate(double kbs) {
+        if (Double.isNaN(kbs)) return "—";
+        if (kbs >= 1024 * 1024) return String.format(java.util.Locale.US, "%.1f GB/s", kbs / 1048576.0);
+        if (kbs >= 1024) {
+            double mb = kbs / 1024.0;
+            return String.format(java.util.Locale.US, mb < 10 ? "%.2f MB/s" : "%.1f MB/s", mb);
+        }
+        return Math.round(kbs) + " kB/s";
     }
 
     private static String uptimeText(long s) {
