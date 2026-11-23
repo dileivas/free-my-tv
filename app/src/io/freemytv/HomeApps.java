@@ -1253,7 +1253,7 @@ final class HomeApps {
         } catch (PackageManager.NameNotFoundException ignored) {
         }
         if (icon == null) return darkTile(TILE_W, TILE_H);
-        boolean adaptive = icon instanceof AdaptiveIconDrawable;
+        boolean adaptive = Build.VERSION.SDK_INT >= 26 && Adaptive.is(icon);
         // Drawn at the icon's own resolution (the whole tile, so the squircle's edge is smooth too), then filtered down.
         float drawn = TILE_H * (adaptive ? 0.56f * 1.5f : 0.46f);
         float k = detail(icon, drawn, drawn);
@@ -1265,6 +1265,22 @@ final class HomeApps {
         if (adaptive) {
             // Adaptive icon: the layers in a squircle, like an Apple icon. Drawn apart, then filling an anti-aliased
             // rounded rectangle (clipPath leaves stair-stepped corners).
+            Adaptive.draw(canvas, icon, size, Math.round(left), Math.round(top));
+        } else {
+            // Legacy icon (a free-form drawing with transparency): smaller, no frame.
+            int s = Math.round(th * 0.46f);
+            icon.setBounds((tw - s) / 2, (th - s) / 2, (tw + s) / 2, (th + s) / 2);
+            icon.draw(canvas);
+        }
+        return shrink(b, TILE_W, TILE_H);
+    }
+
+    /** Only this class touches AdaptiveIconDrawable (Android 8+), so HomeApps verifies on Fire OS 6 (API 25). */
+    private static final class Adaptive {
+        static boolean is(Drawable d) { return d instanceof AdaptiveIconDrawable; }
+
+        /** The two layers of an adaptive icon inside a squircle, like an Apple icon. */
+        static void draw(Canvas canvas, Drawable icon, int size, int x, int y) {
             AdaptiveIconDrawable a = (AdaptiveIconDrawable) icon;
             Bitmap layers = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
             Canvas lc = new Canvas(layers);
@@ -1274,7 +1290,6 @@ final class HomeApps {
                 layer.setBounds(-pad, -pad, size + pad, size + pad);
                 layer.draw(lc);
             }
-            int x = Math.round(left), y = Math.round(top);
             BitmapShader shader = new BitmapShader(layers, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
             Matrix m = new Matrix();
             m.setTranslate(x, y);
@@ -1282,13 +1297,7 @@ final class HomeApps {
             Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
             p.setShader(shader);
             canvas.drawRoundRect(x, y, x + size, y + size, size * 0.2237f, size * 0.2237f, p);
-        } else {
-            // Legacy icon (a free-form drawing with transparency): smaller, no frame.
-            int s = Math.round(th * 0.46f);
-            icon.setBounds((tw - s) / 2, (th - s) / 2, (tw + s) / 2, (th + s) / 2);
-            icon.draw(canvas);
         }
-        return shrink(b, TILE_W, TILE_H);
     }
 
     /**

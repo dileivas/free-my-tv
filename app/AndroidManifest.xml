@@ -12,6 +12,9 @@
          has no screen for it. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Fire TV: which app is in the foreground, so our home screen can replace Amazon's after a HOME press
+         (FireHomeKeeper). Fire OS has no screen for it: ADB grants it (see docs/FIRETV.md). -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
     <!-- The sleep timer on time: from Android 12, windows under 10 minutes stretch to 10. No prompt for either. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
@@ -192,6 +195,12 @@
             android:excludeFromRecents="true"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density|fontScale|locale|layoutDirection"
             android:theme="@style/FreeMyTV.Panel" />
+
+        <!-- Fire TV: brings our home screen back when Amazon's launcher takes the Home button. Off by default. -->
+        <service
+            android:name=".FireHomeKeeper"
+            android:exported="true"
+            android:label="Free My TV" />
 
         <service
             android:name=".Screensaver"

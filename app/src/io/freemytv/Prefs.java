@@ -290,6 +290,10 @@ final class Prefs {
 
     static void setTheme(String v) { put("theme", v); }
 
+    /** Fire TV: bring our home screen back when Amazon's launcher takes the Home button (FireHomeKeeper). */
+    static boolean fireHome() { return sp().getBoolean("firehome", false); }
+    static void setFireHome(boolean on) { put("firehome", on); }
+
     /** Wi-Fi/Ethernet, Bluetooth and USB icons at the top-left of the home screen. */
     static boolean statusIcons() { return sp().getBoolean("statusicons", false); }
     static void setStatusIcons(boolean on) { put("statusicons", on); }
