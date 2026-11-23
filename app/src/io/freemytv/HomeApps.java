@@ -121,7 +121,7 @@ final class HomeApps {
         {"amediateka", "Амедиатека", "ru.amediateka", "E31E24", "", "1"},
         {"wink", "Wink", "ru.rt.video.app.tv", "FF5A1F", "", "1"},
         // Fire TV apps this fork adds to the shelf (they are not streaming services for the picks).
-        {"severino", "Severino", "com.severino.panel", "818CF8", "", "1"},
+        {"severino", "Severino", "com.severino.panel", "FFC702", "", "3.2"},
         {"jellyfin", "Jellyfin", "org.jellyfin.androidtv", "00A4DC", "", "1"},
         {"seerr", "Seerr", "com.seerr.tv", "7B5CD6", "", "1"},
         {"kodi", "Kodi", "org.xbmc.kodi", "17B2E7", "", "1"},
