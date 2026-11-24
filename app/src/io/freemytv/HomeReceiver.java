@@ -11,10 +11,16 @@ import android.content.Intent;
 public class HomeReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
+        // LOCKED_BOOT_COMPLETED chega antes de desbloquear: o Prefs ainda não está legível e o
+        // Keeper (não direct-boot-aware) falharia. Nesse caso esperamos o USER_UNLOCKED/BOOT_COMPLETED.
+        android.os.UserManager users = (android.os.UserManager) context.getSystemService(Context.USER_SERVICE);
+        if (users != null && !users.isUserUnlocked()) return;
         if (Intent.ACTION_BOOT_COMPLETED.equals(action)) {
             HomeMode.bootCheck(context);
             FireHomeKeeper.start(context);   // Fire TV only; no-op elsewhere
             Updates.schedule(context);
+        } else if (Intent.ACTION_USER_UNLOCKED.equals(action)) {
+            FireHomeKeeper.start(context);   // agora o armazenamento do app está legível
         } else if (Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)) {
             HomeMode.verify(context);   // app updated: complete Free My TV mode if something is missing
             HomeMode.ensureRemoteService(context, 3_000);

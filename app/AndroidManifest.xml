@@ -283,11 +283,17 @@
             </intent-filter>
         </service>
 
+        <!-- directBootAware: no Fire OS 6 o BOOT_COMPLETED é entregue app por app e chega ~75 s
+             depois da home da Amazon; o LOCKED_BOOT_COMPLETED (só para receivers direct-boot-aware)
+             chega em ~7 s. Só o receiver é direct-boot-aware: ele espera o usuário desbloquear. -->
         <receiver
             android:name=".HomeReceiver"
-            android:exported="false">
+            android:exported="true"
+            android:directBootAware="true">
             <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.USER_UNLOCKED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>

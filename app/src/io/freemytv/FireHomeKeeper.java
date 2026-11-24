@@ -99,6 +99,8 @@ public final class FireHomeKeeper extends Service {
             thread.start();
             worker = new Handler(thread.getLooper());
             worker.post(poll);
+            // No boot o UsageStats costuma vir vazio: sobe o nosso home pelas tarefas, com retries.
+            for (long delay : new long[] {2500, 6000, 15000}) worker.postDelayed(this::firstStart, delay);
         }
         return START_STICKY;
     }
@@ -197,6 +199,19 @@ public final class FireHomeKeeper extends Service {
             return info.topActivity == null ? null : info.topActivity.getPackageName();
         } catch (Throwable t) {
             return null;
+        }
+    }
+
+    /** Boot/atualização: não há tarefa nossa e o UsageStats pode não ter evento nenhum. */
+    private void firstStart() {
+        try {
+            ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            if (am == null || !am.getAppTasks().isEmpty()) return;
+            AppLog.w("fire-keeper: first start");
+            lastLaunch = 0;          // ignora o debounce
+            bringBack();
+        } catch (Throwable t) {
+            AppLog.w("fire-keeper: first start " + t);
         }
     }
 
